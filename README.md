@@ -4,6 +4,6 @@ The final project of Visualization.
 Group Member:  
 
               Menghan Wu  
-              Huai Shuo   
+              Shuo Huai     
               Ye Feng    
               
