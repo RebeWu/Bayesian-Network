@@ -1,7 +1,8 @@
 ## Bayesian-Network
 The final project of Visualization.  
 
-Group Member:
+Group Member:  
+
               Menghan Wu  
               Huai Shuo   
               Ye Feng    
