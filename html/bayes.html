@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>  
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Mnist-Bayes</title>
+<style>
+    body {background-color:white;}
+	button { 
+        padding:8px;  
+        color: #ffffff;  
+        text-align: center; 
+        vertical-align: middle;  
+        font-weight: 900; 
+        font-size:100% 
+    }
+    button{
+        background: gold;
+        border: none;
+        border-radius: 16px 4px; 
+        width: 80px;
+        height: 40px;
+    }
+</style>
+<link rel="stylesheet" href="style.css">
+<script src="getpx.js"> </script>
+<script src="getpxy.js"> </script>
+<script>
+	var oC,canvas,ctx,cas,con,oCG,p,px,pxy,ceach,cteach;
+//窗体加载
+	window.onload = function() {
+		oC = document.getElementById('c1');
+		oCG = oC.getContext('2d');
+		oCG.lineWidth = 36;
+		oCG.lineCap = "round";
+	　　oC.onmousedown = function(ev) {
+			oCG.beginPath();
+			var ev = ev || window.event;
+			oCG.moveTo(ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop);
+			document.onmousemove = function(ev) {
+				var ev = ev || window.event;//获取event对象
+				oCG.lineTo(ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop);
+				oCG.stroke();
+			};
+			oC.onmouseup = function() {
+				document.onmousemove = null;
+				document.onmouseup = null;
+				oCG.closePath();
+			};
+	　　};
+		px = getPx(); // 加载px概率
+		pxy = getPxy(); //加载pxy概率
+		drawSR();
+	};
+// 清除按钮
+	function clr(){
+		oCG.clearRect(0,0,280,280);
+		cxt.clearRect(0,0,280,280);
+		drawSR();
+		con.clearRect(0,0,100,100);
+		cteach.clearRect(0,0,500,50);
+	}
+//OK按钮
+	function ok(){
+		var v =img2vec(oCG.getImageData(0,0,280,280));
+		p = new Array();
+		for(var i = 0;i<28;i++){
+			p[i] = new Array();
+			for(var j =0;j<28;j++){
+				p[i][j] = 0;
+			}
+		}
+		for(var i = 0;i<280;i++){
+			for (var j = 0;j<280;j++){
+				p[parseInt(i/10)][parseInt(j/10)] = p[parseInt(i/10)][parseInt(j/10)] +v[i*280+j]; 
+			}
+		}
+		for(var i = 0;i<28;i++){
+			for(var j =0;j<28;j++){
+				if(p[i][j]>50)
+					p[i][j] = 1;
+				else
+					p[i][j] = 0;
+			}
+		}
+		drawrect();
+		var logp = Reco();
+		var max = logp[0];
+		var lab = 0;
+		for(var i = 0;i<10;i++){
+			if(logp[i]>max){
+				max = logp[i];
+				lab = i;
+			}
+		}
+		var temp = new Array();
+		var tsum = 0;
+		for(var i = 0;i<10;i++){
+			tsum = tsum + 1/(Math.pow(10,logp[i]/-800));
+			temp[i] = 1/(Math.pow(10,logp[i]/-800));
+		}
+		for(var i = 0;i<10;i++){
+			temp[i] = temp[i] / tsum;
+		}
+		drawEach(temp,lab);
+		//console.log(logp);
+		drawText(lab);
+	}
+//识别
+	function Reco(){
+		var logpx = 0;
+		var logpxy = new Array();
+		var logp = new Array();
+		for(var i = 0;i<10;i++){
+			logpxy[i] = 0;
+			logp[i] = 0;
+		}
+		for(var i =0;i<28;i++){
+			for(var j = 0;j<28;j++){
+				logpx = logpx+p[i][j]*Math.log(px[i*28+j]+Math.pow(10,-10))+(1-p[i][j])*(1-Math.log(px[i*28+j]+Math.pow(10,-10)));
+			}
+		}
+		for(var i =0;i<28;i++){
+			for(var j = 0;j<28;j++){
+				for(var k=0;k<10;k++){
+					logpxy[k] = logpxy[k]+p[i][j]*Math.log(pxy[k][i*28+j]+Math.pow(10,-10))+Math.log(1-pxy[k][i*28+j])*(1-p[i][j]);
+				}
+			}
+		}
+		for(var k = 0;k<10;k++){
+			logp[k] = logpxy[k] + Math.log(0.1)-logpx;
+		}
+		
+		return logp;
+	}
+
+//图像转数组
+	function img2vec(raw){
+		var v = new Array(raw.data.length / 4);
+		for (var i = 0; i < v.length; i++){
+			v[i] = raw.data[i*4+3]/255;
+		}
+		return v;
+	}
+//28*28化结果
+	function drawrect(){
+		for(var i = 0;i<28;i++){
+			for(var j = 0;j<28;j++){
+				if(p[i][j]==1){
+					cxt.fillStyle = 'black';
+					cxt.fillRect(j*10, i*10, 10, 10);
+				}
+				else{
+					cxt.fillStyle = 'white';
+					cxt.fillRect(j*10, i*10, 10, 10);
+				}
+				cxt.strokeStyle ="#D3D3D3";
+				cxt.lineWidth = 1;
+				cxt.strokeRect(j*10,i*10,10,10);
+			}
+		}
+	}
+//画格子
+	function drawSR(){
+		canvas =document.getElementById('c2');
+		cxt = canvas.getContext('2d');
+		for(var i = 0;i<28;i++){
+			for(var j = 0;j<28;j++){
+				cxt.strokeStyle ="#D3D3D3";
+				cxt.lineWidth = 1;
+				cxt.strokeRect(j*10,i*10,10,10);
+			}
+		}
+	}
+//识别结果
+	function drawText(lab){
+		cas =document.getElementById('c3');
+		con = cas.getContext('2d');
+		con.font = 'bold 100px consolas';
+		con.textAlign = 'left';
+		con.textBaseline = 'top';
+		con.strokeStyle = '#DF5326';
+		con.strokeText(lab,22, -10);   
+	}
+//画每个点的概率
+		function drawEach(p,lab){
+			ceach = document.getElementById('c4');
+			cteach = ceach.getContext('2d');
+			cteach.font = 'bold 22px consolas';
+			cteach.textAlign = 'left';
+			cteach.textBaseline = 'top';
+			cteach.fillStyle = '#B8860B';
+			for(var i =0;i<10;i++){
+				var temp = p[i].toFixed(4);
+				if(i==lab){
+					cteach.fillStyle = '#FF4500';
+					cteach.fillText(temp,105*(i%5), 25*parseInt(i/5)); 
+					cteach.fillStyle = '#B8860B';
+				}
+				else
+					cteach.fillText(temp,105*(i%5), 25*parseInt(i/5));   
+			}
+		}
+	
+</script>
+</head>
+ 
+<body>
+<div style="position:absolute;top:0px; left:900px;">
+<button id='clr' onclick='clr()' class="depth" type="button"> C </button>
+<button id='ok' onclick='ok()' class="depth" type="button" style="position:absolute;top:100px; left:0px;">&#8730;</button> 
+</div>
+
+<canvas id="c1" width="280" height="280" style="background:white;position:absolute;top:50px; left:100px;"> <!--宽高写在html里，写在css里有问题-->
+    <span>该浏览器不支持canvas内容</span> <!--对于不支持canvas的浏览器显示-->
+</canvas>
+	
+<canvas id="c2" width="280" height="280" style="background:white;position:absolute;top:50px; left:500px;">
+    <span>该浏览器不支持canvas内容</span>
+</canvas>	
+	
+<canvas id="c3" width="100" height="100" style="background:white;position:absolute;top:540px; left:390px;">
+    <span>该浏览器不支持canvas内容</span>
+</canvas>
+
+<canvas id="c4" width="500" height="50" style="background:transparent;position:absolute;top:440px; left:200px;">
+    <span>该浏览器不支持canvas内容</span>
+</canvas>
+</body>
+</html>

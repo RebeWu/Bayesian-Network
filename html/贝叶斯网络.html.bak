@@ -1,0 +1,1876 @@
+﻿
+<!DOCTYPE html><html lang="en">
+<head><meta charset="utf-8">
+<link href="material-icons.css" rel="stylesheet">
+
+<script type="text/front-matter">
+  title: How to Use Bayes algorithms
+  description: Learning  Naive Bayes and Bayesian Networks with Visualizations.
+  authors:
+    - 丰叶
+    - 吴梦涵
+    - 槐硕
+</script>
+
+<script src="assets/d3.min.js"></script>
+<script src="assets/tsne.js"></script>
+<script src="assets/demo-configs.js"></script>
+<script src="assets/figure-configs.js"></script>
+<script src="assets/visualize.js"></script>
+<script src="assets/figures.js"></script>
+
+<style>
+
+/* Resets */
+
+input[type=range] {
+  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+  width: 100%; /* Specific width is required for Firefox. */
+  background: transparent; /* Otherwise white in Chrome */
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+  outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  /* Hides the slider so custom styles can be added */
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+/* Thumb */
+
+/* Special styling for WebKit/Blink */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+
+/* All the same stuff for Firefox */
+input[type=range]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  border: none;
+}
+
+/* All the same stuff for IE */
+input[type=range]::-ms-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: grey;
+  cursor: pointer;
+}
+
+/* Track */
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+input[type=range]::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html {
+  font: 400 16px/1.55em -apple-system, BlinkMacSystemFont, "Roboto", Helvetica, sans-serif;
+  /*background-color: hsl(223, 9%, 25%);*/
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  /*margin: 0;*/
+  background-color: black;
+}
+
+a {
+  color: #004276;
+}
+
+figure {
+  margin: 0;
+}
+
+h1 {
+  font-family: Cochin, Georgia, serif;
+}
+
+/*
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}*/
+/*
+  Column: 60px
+  Gutter: 24px
+
+  Body: 648px
+    - 8 columns
+    - 7 gutters
+  Middle: 816px
+  Page: 984px
+    - 12 columns
+    - 11 gutters
+*/
+
+.l-body,
+.l-body-outset,
+.l-page,
+.l-page-outset,
+.l-middle,
+.l-middle-outset,
+dt-article > div,
+dt-article > p,
+dt-article > h1,
+dt-article > h2,
+dt-article > h3,
+dt-article > h4,
+dt-article > figure,
+dt-article > table,
+dt-article > ol,
+dt-article > ul,
+dt-article > dt-byline,
+dt-article > dt-math,
+dt-article > dt-code,
+dt-article section > div,
+dt-article section > p,
+dt-article section > h1,
+dt-article section > h2,
+dt-article section > h3,
+dt-article section > h4,
+dt-article section > figure,
+dt-article section > table,
+dt-article section > ol,
+dt-article section > ul,
+dt-article section > dt-byline,
+dt-article section > dt-code {
+  width: auto;
+  margin-left: 24px;
+  margin-right: 24px;
+  box-sizing: border-box;
+}
+
+@media(min-width: 768px) {
+  .l-body,
+  .l-body-outset,
+  .l-page,
+  .l-page-outset,
+  .l-middle,
+  .l-middle-outset,
+  dt-article > div,
+  dt-article > p,
+  dt-article > h1,
+  dt-article > h2,
+  dt-article > h3,
+  dt-article > h4,
+  dt-article > figure,
+  dt-article > table,
+  dt-article > ol,
+  dt-article > ul,
+  dt-article > dt-byline,
+  dt-article > dt-math,
+  dt-article > dt-code,
+  dt-article section > div,
+  dt-article section > p,
+  dt-article section > h1,
+  dt-article section > h2,
+  dt-article section > h3,
+  dt-article section > h4,
+  dt-article section > figure,
+  dt-article section > table,
+  dt-article section > ol,
+  dt-article section > ul,
+  dt-article section > dt-byline,
+  dt-article section > dt-code {
+    margin-left: 72px;
+    margin-right: 72px;
+  }
+}
+
+@media(min-width: 1080px) {
+  .l-body,
+  dt-article > div,
+  dt-article > p,
+  dt-article > h2,
+  dt-article > h3,
+  dt-article > h4,
+  dt-article > figure,
+  dt-article > table,
+  dt-article > ol,
+  dt-article > ul,
+  dt-article > dt-byline,
+  dt-article > dt-math,
+  dt-article > dt-code,
+  dt-article section > div,
+  dt-article section > p,
+  dt-article section > h2,
+  dt-article section > h3,
+  dt-article section > h4,
+  dt-article section > figure,
+  dt-article section > table,
+  dt-article section > ol,
+  dt-article section > ul,
+  dt-article section > dt-byline,
+  dt-article section > dt-code {
+    margin-left: calc(50% - 984px / 2);
+    width: 648px;
+  }
+  .l-body-outset,
+  dt-article .l-body-outset {
+    margin-left: calc(50% - 984px / 2 - 96px/2);
+    width: calc(648px + 96px);
+  }
+  .l-middle,
+  dt-article .l-middle {
+    width: 816px;
+    margin-left: calc(50% - 984px / 2);
+    margin-right: auto;
+  }
+  .l-middle-outset,
+  dt-article .l-middle-outset {
+    width: calc(816px + 96px);
+    margin-left: calc(50% - 984px / 2 - 48px);
+    margin-right: auto;
+  }
+  dt-article > h1,
+  dt-article section > h1,
+  .l-page,
+  dt-article .l-page,
+  dt-article.centered .l-page {
+    width: 984px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .l-page-outset,
+  dt-article .l-page-outset,
+  dt-article.centered .l-page-outset {
+    width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .l-screen,
+  dt-article .l-screen,
+  dt-article.centered .l-screen {
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+  }
+  .l-screen-inset,
+  dt-article .l-screen-inset,
+  dt-article.centered .l-screen-inset {
+    margin-left: 24px;
+    margin-right: 24px;
+    width: auto;
+  }
+  .l-gutter,
+  dt-article .l-gutter {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 24px;
+    margin-right: calc((100vw - 984px) / 2 + 168px);
+    width: calc((984px - 648px) / 2 - 24px);
+  }
+
+  /* Side */
+  .side.l-body,
+  dt-article .side.l-body {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px + 648px) / 2);
+    width: calc(648px / 2 - 24px - 84px);
+  }
+  .side.l-body-outset,
+  dt-article .side.l-body-outset {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px + 648px - 48px) / 2);
+    width: calc(648px / 2 - 48px + 24px);
+  }
+  .side.l-middle,
+  dt-article .side.l-middle {
+    clear: both;
+    float: right;
+    width: calc(456px - 84px);
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px) / 2 + 168px);
+  }
+  .side.l-middle-outset,
+  dt-article .side.l-middle-outset {
+    clear: both;
+    float: right;
+    width: 456px;
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px) / 2 + 168px);
+  }
+  .side.l-page,
+  dt-article .side.l-page {
+    clear: both;
+    float: right;
+    margin-left: 48px;
+    width: calc(624px - 84px);
+    margin-right: calc((100vw - 984px) / 2);
+  }
+  .side.l-page-outset,
+  dt-article .side.l-page-outset {
+    clear: both;
+    float: right;
+    width: 624px;
+    margin-right: calc((100vw - 984px) / 2);
+  }
+}
+
+/* Centered */
+
+@media(min-width: 1080px) {
+  .centered .l-body,
+  .centered.l-body,
+  dt-article.centered > div,
+  dt-article.centered > p,
+  dt-article.centered > h2,
+  dt-article.centered > h3,
+  dt-article.centered > h4,
+  dt-article.centered > figure,
+  dt-article.centered > table,
+  dt-article.centered > ol,
+  dt-article.centered > ul,
+  dt-article.centered > dt-byline,
+  dt-article.centered > dt-code,
+  dt-article.centered section > div,
+  dt-article.centered section > p,
+  dt-article.centered section > h2,
+  dt-article.centered section > h3,
+  dt-article.centered section > h4,
+  dt-article.centered section > figure,
+  dt-article.centered section > table,
+  dt-article.cebtered section > ol,
+  dt-article.centered section > ul,
+  dt-article.centered section > dt-byline,
+  dt-article.centered section > dt-code,
+  dt-article section.centered > div,
+  dt-article section.centered > p,
+  dt-article section.centered > h2,
+  dt-article section.centered > h3,
+  dt-article section.centered > h4,
+  dt-article section.centered > figure,
+  dt-article section.centered > table,
+  dt-article section.centered > ol,
+  dt-article section.centered > ul,
+  dt-article section.centered > dt-byline,
+  dt-article section.centered > dt-code {
+    margin-left: auto;
+    margin-right: auto;
+    width: 648px;
+  }
+  .centered .l-body-outset,
+  .centered.l-body-outset,
+  dt-article.centered .l-body-outset {
+    margin-left: auto;
+    margin-right: auto;
+    width: calc(648px + 96px);
+  }
+  dt-article.centered > h1,
+  dt-article.centered section > h1,
+  dt-article section.centered > h1,
+  .centered .l-middle,
+  .centered.l-middle,
+  dt-article.centered .l-middle {
+    width: 816px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .centered .l-middle-outset,
+  .centered.l-middle-outset,
+  dt-article.centered .l-middle-outset {
+    width: calc(816px + 96px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* page and screen are already centered */
+
+  /* Side */
+
+  .centered .side.l-body,
+  .centered dt-article .side.l-body {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 48px;
+    margin-right: calc((100vw - 648px) / 2);
+    width: calc(4 * 60px + 3 * 24px);
+  }
+  .centered .side.l-body-outset,
+  .centered dt-article .side.l-body-outset {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 48px;
+    margin-right: calc((100vw - 648px) / 2);
+    width: calc(4 * 60px + 3 * 24px);
+  }
+  .centered .side.l-middle,
+  .centered dt-article .side.l-middle {
+    clear: both;
+    float: right;
+    width: 396px;
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px) / 2 + 168px / 2);
+  }
+  .centered .side.l-middle-outset,
+  .centered dt-article .side.l-middle-outset {
+    clear: both;
+    float: right;
+    width: 456px;
+    margin-left: 48px;
+    margin-right: calc((100vw - 984px) / 2 + 168px);
+  }
+  .centered .side.l-page,
+  .centered dt-article .side.l-page {
+    clear: both;
+    float: right;
+    width: 480px;
+    margin-right: calc((100vw - 984px) / 2);
+  }
+  .centered .side.l-page-outset,
+  .centered dt-article .side.l-page-outset {
+    clear: both;
+    float: right;
+    width: 480px;
+    margin-right: calc((100vw - 984px) / 2);
+  }
+  .centered .l-gutter,
+  .centered.l-gutter,
+  dt-article.centered .l-gutter {
+    clear: both;
+    float: right;
+    margin-top: 0;
+    margin-left: 24px;
+    margin-right: calc((100vw - 984px) / 2);
+    width: calc((984px - 648px) / 2 - 24px);
+  }
+
+}
+
+/* Rows and Columns */
+
+.row {
+  display: flex;
+}
+.column {
+  flex: 1;
+  box-sizing: border-box;
+  margin-right: 24px;
+  margin-left: 24px;
+}
+.row > .column:first-of-type {
+  margin-left: 0;
+}
+.row > .column:last-of-type {
+  margin-right: 0;
+}
+dt-article {
+  display: block;
+  color: rgba(255, 255, 255, 0.8);
+  font: 17px/1.55em -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+  padding-bottom: 72px;
+  background: black;
+}
+
+@media(min-width: 1024px) {
+  dt-article {
+    font-size: 20px;
+  }
+}
+
+/* H1 */
+
+dt-article h1 {
+  margin-top: 18px;
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 1em;
+  font-family: HoeflerText-Regular, Cochin, Georgia, serif;
+}
+@media(min-width: 768px) {
+  dt-article h1 {
+    font-size: 46px;
+    margin-top: 48px;
+    margin-bottom: 12px;
+  }
+}
+
+@media(min-width: 1080px) {
+  .centered h1 {
+    text-align: center;
+  }
+
+  dt-article h1 {
+    font-size: 50px;
+    letter-spacing: -0.02em;
+  }
+
+  dt-article > h1:first-of-type,
+  dt-article section > h1:first-of-type {
+    margin-top: 80px;
+  }
+}
+
+
+@media(min-width: 1200px) {
+  dt-article h1 {
+    font-size: 56px;
+  }
+
+  dt-article > h1:first-of-type {
+    margin-top: 100px;
+  }
+}
+
+/* H2 */
+
+dt-article h2 {
+  font-family: HoeflerText-Regular, Cochin, Georgia, serif;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.25em;
+  margin-top: 36px;
+  margin-bottom: 24px;
+}
+
+@media(min-width: 1024px) {
+  dt-article h2 {
+    margin-top: 48px;
+    font-size: 30px;
+  }
+}
+
+dt-article h1 + h2 {
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 1.4em;
+  margin-top: 8px;
+  font-style: normal;
+}
+
+
+@media(min-width: 1080px) {
+  .centered h1 + h2 {
+    text-align: center;
+  }
+  dt-article h1 + h2 {
+    margin-top: 12px;
+    font-size: 24px;
+  }
+}
+
+/* H3 */
+
+dt-article h3 {
+  font-family: HoeflerText-Regular, Georgia, serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.4em;
+  margin-top: 36px;
+  margin-bottom: 18px;
+  font-style: italic;
+}
+
+dt-article h1 + h3 {
+  margin-top: 48px;
+}
+
+@media(min-width: 1024px) {
+  dt-article h3 {
+    font-size: 26px;
+  }
+}
+
+/* H4 */
+
+dt-article h4 {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 14px;
+  line-height: 1.4em;
+}
+
+dt-article a {
+  color: inherit;
+}
+
+dt-article p,
+dt-article ul,
+dt-article ol {
+  margin-bottom: 24px;
+  font-family: Georgia, serif;
+}
+
+dt-article p b,
+dt-article ul b,
+dt-article ol b {
+  -webkit-font-smoothing: antialiased;
+}
+
+dt-article a {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  text-decoration: none;
+}
+
+dt-article a:hover {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.8);
+}
+
+dt-article .link {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+dt-article ul,
+dt-article ol {
+  padding-left: 24px;
+}
+
+dt-article li {
+  margin-bottom: 24px;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+dt-article pre {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+
+dt-article hr {
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  margin-top: 60px;
+  margin-bottom: 60px;
+}
+
+dt-article section {
+  margin-top: 60px;
+  margin-bottom: 60px;
+}
+
+/* Tables */
+
+dt-article table {
+  border-collapse: collapse;
+}
+
+dt-article table th {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+dt-article table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+dt-article table th,
+dt-article table td {
+  font-size: 15px;
+  padding: 2px 0;
+}
+
+/* Figure */
+
+dt-article figure {
+  position: relative;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+@media(min-width: 1024px) {
+  dt-article figure {
+    margin-top: 48px;
+    margin-bottom: 48px;
+  }
+}
+
+dt-article figure img {
+  width: 100%;
+}
+
+dt-article figure svg text,
+dt-article figure svg tspan {
+}
+
+dt-article figure figcaption {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  line-height: 1.5em;
+}
+@media(min-width: 1024px) {
+  dt-article figure figcaption {
+    font-size: 13px;
+  }
+}
+
+dt-article figure.external img {
+  background: black;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+dt-article figure figcaption a {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+dt-article span.equation-mimic {
+  font-family: georgia;
+  font-size: 115%;
+  font-style: italic;
+}
+
+dt-article figure figcaption b {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 1.0);
+}
+
+dt-article > dt-code,
+dt-article section > dt-code  {
+  display: block;
+}
+
+dt-article .citation {
+  color: #668;
+  cursor: pointer;
+}
+
+dt-include {
+  width: auto;
+  display: block;
+}
+/**
+ * prism.js default theme for JavaScript, CSS and HTML
+ * Based on dabblet (http://dabblet.com)
+ * @author Lea Verou
+ */
+
+code {
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 2px;
+  padding: 4px 7px;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+pre code {
+  display: block;
+  background: white;
+  border-left: 3px solid rgba(0, 0, 0, 0.05);
+  padding: 0 0 0 24px;
+}
+
+
+code[class*="language-"],
+pre[class*="language-"] {
+  text-shadow: 0 1px white;
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  text-shadow: none;
+  background: #b3d4fc;
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  text-shadow: none;
+  background: #b3d4fc;
+}
+
+@media print {
+  code[class*="language-"],
+  pre[class*="language-"] {
+  text-shadow: none;
+  }
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  overflow: auto;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: slategray;
+}
+
+.token.punctuation {
+  color: #999;
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #a67f59;
+  background: hsla(0, 0%, 100%, .5);
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #07a;
+}
+
+.token.function {
+  color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e90;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+@media print {
+  @page {
+    size: 8in 11in;
+  }
+  html {
+  }
+  p, code {
+    page-break-inside: avoid;
+  }
+  h2, h3 {
+    page-break-after: avoid;
+  }
+  dt-header {
+    visibility: hidden;
+  }
+  dt-footer {
+    display: none!important;
+  }
+}
+</style>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" type="image/png" href="">
+    <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="">
+    <link rel="canonical" href="">
+    <title>How to Use Bayes algorithms</title>
+  
+    <!--  注脚  -->
+    <meta property="article:published" itemprop="datePublished" content="2017-11-25">
+  
+      <meta property="article:author" content="Feng Ye">
+      <meta property="article:author" content="Wu Menghan">
+      <meta property="article:author" content="Huai Shuo">
+    <!--  网页说明-->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="How to Use Bayes algorithms">
+    <meta property="og:description" content="Learning  Naive Bayes and Bayesian Networks with Visualizations.">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    <meta property="og:locale" content="en_Ch">
+    <meta property="og:site_name" content="SDU">
+  
+   </head>
+   <body>
+   <dt-header>
+<style>
+dt-header {
+  display: block;
+  position: relative;
+  height: 60px;
+  background-color: hsl(200, 60%, 15%);
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 2;
+  color: rgba(0, 0, 0, 0.8);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+dt-header .content {
+  height: 70px;
+}
+dt-header a {
+  font-size: 16px;
+  height: 60px;
+  line-height: 60px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 22px 0;
+}
+dt-header a:hover {
+  color: rgba(255, 255, 255, 1);
+}
+dt-header svg {
+  width: 24px;
+  position: relative;
+  top: 4px;
+  margin-right: 2px;
+}
+@media(min-width: 1080px) {
+  dt-header {
+    height: 70px;
+  }
+  dt-header a {
+    height: 70px;
+    line-height: 70px;
+    padding: 28px 0;
+  }
+  dt-header .logo {
+  }
+}
+dt-header svg path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 3px;
+}
+dt-header .logo {
+  font-size: 17px;
+  font-weight: 200;
+}
+dt-header .nav {
+  float: right;
+  font-weight: 300;
+}
+dt-header .nav a {
+  font-size: 12px;
+  margin-left: 24px;
+  text-transform: uppercase;
+}
+</style>
+
+<div class="content l-page">
+  <a href="/" class="logo">
+    <svg viewBox="-607 419 64 64">
+  <path d="M-573.4,478.9c-8,0-14.6-6.4-14.6-14.5s14.6-25.9,14.6-40.8c0,14.9,14.6,32.8,14.6,40.8S-565.4,478.9-573.4,478.9z"></path>
+</svg>
+
+        SDU_CS_VISUALIZATION
+  </a>
+</div>
+</dt-header>
+
+<!--文章主题-->
+<dt-article>
+  <h1 class="l-middle">How to Use Bayes algorithms</h1>
+  <h2 class="l-middle">Learning  Naive Bayes and Bayesian Networks with Visualizations. By exploring how it behaves in simple cases, we can learn to use it more effectively.</h2>
+  <!--第一个动态展示页面-->
+  <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+    <dt-include src="dot.html">
+	  <iframe src="dot.html" width="1400" height="700" frameborder=”yes” border=”0″ marginwidth=”0″ marginheight=”0″ scrolling=”no” allowtransparency=”yes”  align="center"></iframe>
+	</dt-include>
+	</div>
+  <!--正文1-->
+  <dt-byline>
+<style>
+  dt-byline {
+    font-size: 16px;
+    line-height: 18px;
+    display: block;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  dt-article.centered dt-byline {
+    text-align: center;
+
+  }
+  dt-byline a,
+  dt-article dt-byline a {
+    text-decoration: none;
+    border-bottom: none;
+  }
+  dt-article dt-byline a:hover {
+    text-decoration: underline;
+    border-bottom: none;
+  }
+  dt-byline .authors {
+    text-align: left;
+  }
+  dt-byline .name {
+    display: inline;
+    text-transform: uppercase;
+  }
+  dt-byline .affiliation {
+    display: inline;
+  }
+  dt-byline .date {
+    display: block;
+    text-align: left;
+  }
+  dt-byline .year, dt-byline .month {
+    display: inline;
+  }
+  dt-byline .citation {
+    display: block;
+    text-align: left;
+  }
+  dt-byline .citation div {
+    display: inline;
+  }
+
+  @media(min-width: 768px) {
+    dt-byline {
+    }
+  }
+
+  @media(min-width: 1080px) {
+    dt-byline {
+      border-bottom: none;
+      margin-bottom: 70px;
+    }
+
+    dt-byline a:hover {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    dt-byline .authors {
+      display: inline-block;
+    }
+
+    dt-byline .author {
+      display: inline-block;
+      margin-right: 12px;
+      /*padding-left: 20px;*/
+      /*border-left: 1px solid #ddd;*/
+    }
+
+    dt-byline .affiliation {
+      display: block;
+    }
+
+    dt-byline .author:last-child {
+      margin-right: 0;
+    }
+
+    dt-byline .name {
+      display: block;
+    }
+
+    dt-byline .date {
+      border-left: 1px solid rgba(0, 0, 0, 0.1);
+      padding-left: 15px;
+      margin-left: 15px;
+      display: inline-block;
+    }
+    dt-byline .year, dt-byline .month {
+      display: block;
+    }
+
+    dt-byline .citation {
+      border-left: 1px solid rgba(0, 0, 0, 0.15);
+      padding-left: 15px;
+      margin-left: 15px;
+      display: inline-block;
+    }
+    dt-byline .citation div {
+      display: block;
+    }
+  }
+</style>
+
+
+<div class="byline">
+  <div class="authors">
+    <div class="author">
+        <a class="name" href="http://hint.fm/">Feng Ye</a>
+          <a class="affiliation" href="http://www.sdu.edu.cn/">ShanDong Unversity </a>
+    </div>
+    <div class="author">
+        <a class="name" href="http://hint.fm/">Wu Menghan</a>
+          <a class="affiliation" href="http://www.sdu.edu.cn/">ShanDong Unversity </a>
+    </div>
+    <div class="author">
+        <a class="name" href="http://enjalot.github.io/">Huai Shuo</a>
+          <a class="affiliation" href="http://www.sdu.edu.cn/">ShanDong Unversity </a>
+    </div>
+  </div>
+  <div class="date">
+    <div class="month">Nov. 25</div>
+    <div class="year">2017</div>
+  </div>
+  <a class="citation" href="#citation">
+    <div>Citation:</div>
+    <div>Feng, et al., 2017</div>
+  </a>
+</div>
+</dt-byline>
+  <p>A Bayesian network is a probabilistic graphical model (a type of statistical model) that represents a set of random variables and their conditional dependencies via a directed acyclic graph (DAG).</p>
+  <p>Here are a series of simple examples to show what Bayesian Networks look like and how to use them to prodict the answer you want. The Bayes Networks are really useful (such as the bayes rnn)— but only if you know how to build one.</p>
+
+  <p>Before diving in: if you haven’t encountered Bayes algorithms before, here’s what you need to know about the math behind it.
+  Formally, Bayesian networks are DAGs whose nodes represent random variables in the Bayesian sense: 
+  they may be observable quantities, latent variables, unknown parameters or hypotheses. Edges represent conditional dependencies; 
+  nodes that are not connected represent variables that are conditionally independent of each other.
+  Each node is associated with a probability function that takes, as input, a particular set of values for the node's parent variables,
+  and gives (as output) the probability of the variable represented by the node.</p>
+
+  <p>Besides the graph, the Bayesian Networks  include a  Conditional Probability Table (CPT) which  defined for a set of discrete (not independent) random variables to demonstrate marginal probability of a single variable with respect to the others.
+	Here are some math fundamentals:</p>
+	<p>Conditional Probability : P(B|A) = P(B,A)/P(A)</p>
+	<p>Product Rule : P(B,A) = P(B|A)·P(A)</p>
+	<p>If two nodes are marginal independent , it means: P(A|B) =P(A) ,P(B|A)=P(B). If three nodes are conditional independent ,such as A and B are independent but C is not, it means P(A|B,C) = P(A|C)</p>
+
+  <p>If we can know all different node sets' joint distribution, we can solve all the statisc problems, but the truth is it is too difficult to calculate all the probabilities with a large number of nodes.We need find some ways to simplify the question.</p>
+ <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+         <img src="be.jpg"  alt="bayes" align="middle" hspace="100"/>
+  </div>
+  <hr>
+
+  <h2>1. Naive Bayes</h2>
+
+  <p>Let’s start with the Naive Bayes.In machine learning, naive Bayes classifiers are a family of simple probabilistic classifiers based on applying Bayes' theorem with strong (naive) independence assumptions between the features.</p>
+	<!--朴素贝叶斯网络训练-->
+<h3>Simple Classify Examples Using Naive Bayes</h3>
+ <p>We assume that the x,y attributes are independent. For every pix, we use its x values to find nearest K points and use the ratio of each category as the possibility of this category.</p>
+	<!--朴素贝叶斯网络测试-->
+  <div class="l-page-outset tsne-group" id="figures-02" data-id="02">
+   <iframe src="last.html" width="1000" height="700"  frameborder=”no” border=”0″ marginwidth=”0″ marginheight=”0″ scrolling=”no” allowtransparency=”yes”  align="center"></iframe>
+  
+  </div>
+
+ <h3>A Small Example Of Naive Bayes</h3>
+    <p>Here is a small example of Naive Bayes. We use each pix to calculate the possibilities of the number.</p>
+	<p>The train data comes from MNIST database so the answer may not be acurate  enough for every number you write</p>
+	<p>The offset of the number will strongly affect the answer.</p>
+	 <div class="l-page-outset tsne-group" id="figures-02" data-id="02">
+   <iframe src="bayes.html" width="1000" height="700"  frameborder=”no” border=”0″ marginwidth=”0″ marginheight=”0″ scrolling=”no” allowtransparency=”yes”  align="center"></iframe>
+   </div>
+ <hr>
+  <h2>2. Bayesian Networks</h2>
+
+  <p>So far, so good. But what if there are two attributes that are not independent? Are the result of naive bayes still convincing ? 
+   Below are Bayesian Networks for a mixture of connections in plane with different network structures.</p>
+	<!--贝叶斯网络样例展示-->
+	 <h3>2D Bayesian Networks</h3>
+  <div class="l-page-outset tsne-group" id="figures-03" data-id="03">
+  <iframe src="v2.html" width="1000" height="700"  frameborder=”no” border=”0″ marginwidth=”0″ marginheight=”0″ scrolling=”no” allowtransparency=”yes”  align="center"></iframe>
+  </div>
+
+  <p>Differ from the top 3D Bayesian Network which only can show the category that has the highest possibility, the Bayesian Network can calculate the possibility of each category.</p>
+  <p>There are three different relation between those points.</p>
+  <p>Head To Head:</p>
+   <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+         <img src="head-head.jpg"  alt="bayes" align="middle" hspace="100" />
+  </div>
+  <p>which means a and b are independent  P(a,b)=P(a)*P(b)<p>
+ 
+   <p>Tail To Tail:</p>
+   <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+         <img src="tail-tail.jpg"  alt="bayes" align="middle" hspace="100" />
+  </div>
+  <p>which means a and b are independent under c   P(a,b,c)=P(b|c)P(a|c)P(c)<p>
+   
+  <p>Head to Tail:</p>
+   <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+         <img src="tail-tail.jpg"  alt="bayes" align="middle" hspace="100" />
+  </div>
+  <p>which means  P(a,b,c)=P(a)*P(c|a)*P(b|c)<p>
+   
+  
+
+  <hr>
+
+  <h2>3. Data Driven Parameter Learning </h2>
+
+   <p>We have considered two different ways to compute the parameter, the MLE and the EM.</p>
+   <p>Parameter means the conditional possibilities of each point.</p>
+   <p>The math foundation of these algorithms are too complex to be shown in pictures so we only show some examples of these algorithms. </p>
+ 
+ <h3>Maximum Likelihood Estimation, MLE</h3>
+  <!--MLE-->
+  <div class="l-page-outset tsne-group" id="figures-04" data-id="04">
+  </div>
+
+  <h3>Expectation Maximization Algorithm, EM</h3>
+ <p>An animation demonstrating the EM algorithm fitting a two component Gaussian mixture model to the Old Faithful dataset. The algorithm steps through from a random initialization to convergence.</p>
+  <!--EM-->
+  <div class="l-page-outset tsne-group" id="figures-05" data-id="05">
+        <img src="Em1.gif"  alt="bayes" align="middle" hspace="100"/>
+
+  </div>
+
+  <p>A more fully Bayesian approach to parameters is to treat parameters as additional unobserved variables and to compute a full posterior distribution over all nodes conditional upon observed data, then to integrate out the parameters. This approach can be expensive and lead to large dimension models, so in practice classical parameter-setting approaches are more common.</p>
+
+  <hr>
+ 
+  <h2>4. A Hard Problem ———— Structure learning</h2>
+
+  <p>In the simplest case, a Bayesian network is specified by an expert and is then used to perform inference. In other applications the task of defining the network is too complex for humans.</p>
+   <!--不同贝叶斯网络结构及测试正确性展示-->
+  <div class="l-page-outset tsne-group" id="figures-06" data-id="06">
+  </div>
+
+  <p>Actually the structure learning of bayesian network is a NP-hard problem,but we have no choice and the network structure and the parameters of the local distributions must be learned from data.</p>
+  
+
+ <!-- <p>结构学习说明1</p>
+   <!--贝叶斯网络的结构自动学习-->
+ <!-- <div class="l-page-outset tsne-group" id="figures-07" data-id="07">
+  </div>
+  -->
+  <hr>
+
+
+  <h2>Conclusion</h2>
+
+  <p>Although the Artificial Neural Networks are so popular today, the uninterpretion and mystery confuse a bunch of people about applying them to some field. We ,human-beings ,sometimes prefer reasons that can be easily understanded.The bayesian networks are one type of good structures that can provide logical structure.There are some algorithms that combine the bayesian networks with the Artificial Neural Networks.</p>
+  <p>We hope this page can give you some useful information about the bayesian networks.</p>
+
+
+  <!-- 小样例 -->
+  <dt-include src="assets/tsne-group.html"><style>
+
+.tsne-group {
+  overflow: visible;
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  margin-top: 36px;
+  margin-bottom: 36px;
+}
+
+@media(min-width: 640px) {
+  .tsne-group {
+    -webkit-flex-direction: row;
+    flex-direction: row;
+  }
+}
+
+.tsne-group .original,
+.tsne-group .runner {
+  box-sizing: border-box;
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  position: relative;
+  display: -webkit-flex;
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.tsne-group .original {
+  position: relative;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 12px;
+}
+
+@media(min-width: 640px) {
+  .tsne-group .original,
+  .tsne-group .runner {
+    display: block;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .tsne-group .original {
+    margin-left: 0;
+    padding-right: 12px;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .tsne-group .runner {
+    margin-left: 12px;
+  }
+}
+
+.tsne-group .runner.no-click {
+  cursor: default;
+}
+
+.runner.clickable {
+  cursor: pointer;
+}
+
+.runner.clickable:hover .image {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.runner:hover i {
+  opacity: 1;
+}
+
+.runner.selected i {
+  opacity: 1;
+}
+
+.runner i {
+  font-size: 30px;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  background-color: hsla(207, 44%, 79%, 0.8);
+  color: steelblue;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  line-height: 0;
+  width: 150px;
+  padding: 75px 0;
+  text-align: center;
+}
+
+@media(min-width: 640px) {
+  .runner i {
+    width: 100%;
+    padding: 50% 0;
+  }
+}
+
+.runner.selected .image::after {
+  content: "";
+  border: 2px solid rgba(70, 130, 180, 1);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  box-sizing: border-box;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.tsne-group .image {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+  width: 150px;
+  padding-top: 150px;
+  background: white;
+  position: relative;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  margin-right: 12px;
+}
+
+@media(min-width: 640px) {
+  .tsne-group .image {
+    width: 100%;
+    padding-top: 100%;
+    margin-right: 0;
+  }
+}
+
+.tsne-group .original .image {
+  box-shadow: none;
+}
+
+.tsne-group .image img {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  width: 90%;
+}
+
+.tsne-group h3.caption {
+  font-size: 15px;
+  margin-top: 12px;
+}
+
+.tsne-group .caption {
+  font-size: 12px;
+  line-height: 1.6em;
+  margin-top: 12px;
+  width: 100px;
+}
+
+@media(min-width: 640px) {
+  .tsne-group .caption,
+  .tsne-group h3.caption {
+    margin-top: 8px;
+    width: 100%;
+  }
+}
+</style>
+
+<script>
+(function() {
+  var format = d3.format(",");
+  d3.selectAll(".tsne-group").data(figures, function(d) {
+    if(!d) return this.dataset.id;
+    return d.id
+  })
+  .each(generateFigure)
+
+  function generateFigure(figure) {
+
+    var FIGURE = figure.id
+    var dis = d3.select(this)
+    var original = dis.append("div").classed("original", true)
+    original.append("div")
+        .classed("image", true)
+      .append("img")
+        .classed("tsne-plot", true)
+        .attr("src", "assets/figure_" + FIGURE + "_" + "original.png");
+    original.append("h3").classed("caption", true).text("Original")
+
+    // examples
+    var runners = dis.selectAll(".runner").data(figure.examples)
+      .enter().append("div").classed("runner", true)
+    if(!figure.noclick) {
+      runners
+        .classed("clickable", true)
+        .on("click", function(d) {
+          d3.selectAll(".runner").classed("selected", false)
+          updateStateFromFigure(figure, d, this);
+          d3.select(this).classed("selected", true)
+        });
+    } else {
+      runners.classed("no-click", true)
+    }
+
+    runners.append("div")
+        .classed("image", true)
+      .append("img")
+        .attr("src", function(d,i) {
+          return "assets/figure_" + FIGURE + "_" + d.id + ".png"
+        });
+
+    if(!figure.noclick) {
+      runners.append("i")
+        .classed("material-icons", true)
+        .text("open_in_browser")
+    }
+
+    var caption = runners.append("div").classed("caption", true);
+
+    caption.append("div").text(function(d) { return "Perplexity: " + format(d.perplexity); })
+
+    caption.append("div").text(function(d) { return "Step: " + format(d.step); })
+  }
+})()
+</script>
+</dt-include>
+
+</dt-article>
+  <!--附录-->
+<dt-appendix>
+<style>
+  dt-appendix {
+    display: block;
+    font-size: 14px;
+    line-height: 24px;
+    margin-bottom: 0;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    color: rgba(0,0,0,0.5);
+    background: rgb(250, 250, 250);
+    padding-top: 36px;
+    padding-bottom: 60px;
+  }
+  dt-appendix h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    color: rgba(0,0,0,0.65);
+  }
+  dt-appendix .citation {
+    font-size: 11px;
+    line-height: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    padding-left: 18px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px 18px;
+    border-radius: 3px;
+    color: rgba(150, 150, 150, 1);
+    overflow: hidden;
+    margin-top: -12px;
+  }
+  dt-appendix .references {
+    font-size: 12px;
+    line-height: 20px;
+  }
+  dt-appendix a {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  dt-appendix ol,
+  dt-appendix ul {
+    padding-left: 24px;
+  }
+</style>
+
+<div class="l-body">
+
+  <h3>Acknowledgments</h3>
+  <p>We are grateful to Professor Wang for giving us this opportunity, and for excellent editorial.</p>
+
+</div>
+</dt-appendix>
+
+
+
+<style>
+    dt-cite {
+      color: hsla(206, 90%, 20%, 0.7);
+    }
+    dt-cite .citation-number {
+      cursor: default;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, "Roboto", Helvetica, sans-serif;
+      font-size: 75%;
+      color: hsla(206, 90%, 20%, 0.7);
+      display: inline-block;
+      line-height: 1.1em;
+      text-align: center;
+      position: relative;
+      top: -2px;
+      margin: 0 2px;
+    }
+    figcaption dt-cite .citation-number {
+      font-size: 11px;
+      font-weight: normal;
+      top: -2px;
+      line-height: 1em;
+    }
+  </style><div id="cite-hover-boxes-container"><div style="display:none;" class="dt-hover-box" id="dt-cite-hover-box-0"><b>Visualizing data using t-SNE</b> ?<a href="http://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf">[PDF]</a><br>L.v.d. Maaten, G. Hinton.<br>Journal of Machine Learning Research, Vol 9(Nov), pp. 2579—2605. 2008. </div></div><div id="footnote-hover-boxes-container"></div><script>
+
+function nodeFromString(str) {
+  var div = document.createElement("div");
+  div.innerHTML = str;
+  return div.firstChild;
+}
+
+function make_hover_css(pos) {
+  var pretty = window.innerWidth > 600;
+  var padding = pretty? 18 : 12;
+  var outer_padding = pretty ? 18 : 0;
+  var bbox = document.querySelector("body").getBoundingClientRect();
+  var left = pos[0] - bbox.left, top = pos[1] - bbox.top;
+  var width = Math.min(window.innerWidth-2*outer_padding, 648);
+  left = Math.min(left, window.innerWidth-width-outer_padding);
+  width = width - 2*padding;
+  return (`position: absolute;
+     background-color: #FFF;
+     opacity: 0.95;
+     max-width: ${width}px;
+     top: ${top}px;
+     left: ${left}px;
+     border: 1px solid rgba(0, 0, 0, 0.25);
+     padding: ${padding}px;
+     border-radius: ${pretty? 3 : 0}px;
+     box-shadow: 0px 2px 10px 2px rgba(0, 0, 0, 0.2);
+     z-index: ${1e6};`);
+}
+
+
+function DtHoverBox(div_id) {
+  this.div = document.querySelector("#"+div_id);
+  this.visible = false;
+  this.bindDivEvents();
+  DtHoverBox.box_map[div_id] = this;
+}
+
+DtHoverBox.box_map = {};
+
+DtHoverBox.get_box = function get_box(div_id) {
+  if (div_id in DtHoverBox.box_map) {
+    return DtHoverBox.box_map[div_id];
+  } else {
+    return new DtHoverBox(div_id);
+  }
+}
+
+DtHoverBox.prototype.show = function show(pos){
+  this.visible = true;
+  this.div.setAttribute("style", make_hover_css(pos) );
+  for (var box_id in DtHoverBox.box_map) {
+    var box = DtHoverBox.box_map[box_id];
+    if (box != this) box.hide();
+  }
+}
+
+DtHoverBox.prototype.showAtNode = function showAtNode(node){
+    var bbox = node.getBoundingClientRect();
+    this.show([bbox.right, bbox.bottom]);
+}
+
+DtHoverBox.prototype.hide = function hide(){
+  this.visible = false;
+  if (this.div) this.div.setAttribute("style", "display:none");
+  if (this.timeout) clearTimeout(this.timeout);
+}
+
+DtHoverBox.prototype.stopTimeout = function stopTimeout() {
+  if (this.timeout) clearTimeout(this.timeout);
+}
+
+DtHoverBox.prototype.extendTimeout = function extendTimeout(T) {
+  //console.log("extend", T)
+  var this_ = this;
+  this.stopTimeout();
+  this.timeout = setTimeout(function(){this_.hide();}.bind(this), T);
+}
+
+// Bind events to a link to open this box
+DtHoverBox.prototype.bind = function bind(node) {
+  if (typeof node == "string"){
+    node = document.querySelector(node);
+  }
+
+  node.addEventListener("mouseover", function(){
+    if (!this.visible) this.showAtNode(node);
+    this.stopTimeout();
+  }.bind(this));
+
+  node.addEventListener("mouseout", function(){this.extendTimeout(250);}.bind(this));
+
+  node.addEventListener("touchstart", function(e) {
+    if (this.visible) {
+      this.hide();
+    } else {
+      this.showAtNode(node);
+    }
+    // Don't trigger body touchstart event when touching link
+    e.stopPropagation();
+  }.bind(this));
+}
+
+DtHoverBox.prototype.bindDivEvents = function bindDivEvents(){
+  // For mice, same behavior as hovering on links
+  this.div.addEventListener("mouseover", function(){
+    if (!this.visible) this.showAtNode(node);
+    this.stopTimeout();
+  }.bind(this));
+  this.div.addEventListener("mouseout", function(){this.extendTimeout(250);}.bind(this));
+
+  // Don't trigger body touchstart event when touching within box
+  this.div.addEventListener("touchstart", function(e){e.stopPropagation();});
+  // Close box when touching outside box
+  document.body.addEventListener("touchstart", function(){this.hide();}.bind(this));
+}
+
+var hover_es = document.querySelectorAll("span[data-hover-ref]");
+hover_es = [].slice.apply(hover_es);
+hover_es.forEach(function(e,n){
+  var ref_id = e.getAttribute("data-hover-ref");
+  DtHoverBox.get_box(ref_id).bind(e);
+})
+</script>
+<dt-footer>
+<style>
+dt-footer {
+  display: block;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 300;
+  padding: 40px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: hsl(200, 60%, 15%);
+  text-align: center;
+}
+dt-footer .logo svg {
+  width: 24px;
+  position: relative;
+  top: 4px;
+  margin-right: 2px;
+}
+dt-footer .logo svg path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 3px;
+}
+dt-footer .logo {
+  font-size: 17px;
+  font-weight: 200;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  margin-right: 6px;
+}
+dt-footer .nav {
+  margin-top: 12px;
+}
+dt-footer .nav a {
+  color: rgba(255, 255, 255, 0.8);
+  margin-right: 6px;
+}
+</style>
+
+<div class="l-page">
+  <div class="description">
+  <a href="/" class="logo">
+    <svg viewBox="-607 419 64 64">
+  <path d="M-573.4,478.9c-8,0-14.6-6.4-14.6-14.5s14.6-25.9,14.6-40.8c0,14.9,14.6,32.8,14.6,40.8S-565.4,478.9-573.4,478.9z"></path>
+</svg>
+
+    SDU_CS_VISUALIZATION
+  </a>
+  2015-Elite class-Computer Science
+  </div>
+  <div class="nav">
+    <a href="https://github.com/RebeWu/Bayesian-Network">GitHub</a>
+
+
+  </div>
+</div>
+</dt-footer><script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-83741880-1', 'auto');
+  ga('send', 'pageview');
+</script></body></html>

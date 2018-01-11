@@ -1,0 +1,168 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>ABC</title>  
+</head>  
+ <link rel="stylesheet" href="style.css">
+<body>  
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+	var width = 800;
+	var height = 450;
+	var bili = 30;
+	var pix = 400,piy = 200;
+	//边界空白
+	var padding = {left: 0, right:0, top: 0, bottom: 20 };
+	var svg = d3.select("body")
+				.append("svg")
+				.attr("width", width + padding.left + padding.right)
+				.attr("height", height + padding.top + padding.bottom)
+				.append("g")
+				.attr("transform","translate("+ padding.left + "," + padding.top + ")");
+	
+	var agx,agy,arx,ary;
+	
+	svg.append("rect").attr("x",pix-200).attr("y",piy-200).attr("width",400).attr("height",400).attr("stroke","green").attr("fill","#CCCCCC");
+	
+	function original_data(){
+		agx = new Array(-0.4326,3,0.1253,0.2877,-1.1465,0.5,0.8,1.0);
+		agy = new Array(1.1909,4,0.3273,0.678,0.1746,3.2,3.2,-2.2);
+		arx = new Array(1.8133,2.7258,1.4117,4.1832,1.8636);
+		ary = new Array(1.0139,1.0668,0.5593,0.3044,0.1677);
+	}
+
+	function circle_data() {
+		agx = new Array();
+		agy = new Array();
+		arx = new Array();
+		ary = new Array();
+		for(var i=0;i<50;i++) {
+			var r = Math.random()*2;
+			var t = Math.random()*2*Math.PI;
+			agx[i] = r*Math.sin(t);
+			agy[i] = r*Math.cos(t);
+		}
+		for(var i=0;i<50;i++) {
+			var r = Math.random()*2+3;
+			var t = 2*Math.PI*i/50.0
+			arx[i] = r*Math.sin(t);
+			ary[i] = r*Math.cos(t);
+		}
+	}
+
+	function spiral_data() {
+		agx = new Array();
+		agy = new Array();
+		arx = new Array();
+		ary = new Array();
+		var n = 100;
+		for(var i=0;i<n;i++) {
+			var r = i/n*5 + Math.random()*0.2-0.1;
+			var t = 1.25*i/n*2*Math.PI +Math.random()*0.2-0.1;
+			agx[i] = r*Math.sin(t);
+			agy[i] = r*Math.cos(t);
+		}
+		for(var i=0;i<n;i++) {
+			var r = i/n*5 + Math.random()*0.2-0.1;
+			var t = 1.25*i/n*2*Math.PI + Math.PI +Math.random()*0.2-0.1;
+			arx[i] = r*Math.sin(t);
+			ary[i] = r*Math.cos(t);
+		}
+	}
+	
+	function drawDot(){
+		for(var i =0;i<agx.length;i++){
+			svg.append("circle").attr("cx",agx[i]*bili+pix).attr("cy",agy[i]*bili+piy).attr("r",5).attr("fill","#000099");
+		}
+		for(var i =0;i<arx.length;i++){
+			svg.append("circle").attr("cx",arx[i]*bili+pix).attr("cy",ary[i]*bili+piy).attr("r",5).attr("fill","#FF3300");
+		}
+	}
+	function clear(){
+		d3.select("body").selectAll("circle").remove();
+	}
+	function orig(){
+		clear();
+		original_data();
+		drawDot();
+		fillRect();
+		drawDot();
+	}
+	function cir(){
+		clear();
+		circle_data();
+		drawDot();
+		fillRect();
+		drawDot();
+	}
+	function spi(){
+		clear();
+		spiral_data();
+		drawDot();
+		fillRect();
+		drawDot();
+	}
+	
+	function getCo(x,y){
+		var g = 0,r = 0,pxg,pyg;
+		var dis = 20;
+		for(var i = 0;i < agx.length;i++){
+			
+			if(Math.abs(x-agx[i]*bili-pix)<dis){
+				g = g + 1;
+			}
+		}
+		for(var i = 0;i < arx.length;i++){
+			if(Math.abs(x-arx[i]*bili-pix)<dis){
+				r = r + 1;
+			}
+		}
+		
+		if(g==0&&r==0) return -1;
+		pxg = g/(g+r);
+		
+		var g = 0,r = 0;
+		for(var i = 0;i < agx.length;i++){
+			if(Math.abs(y-agy[i]*bili-piy)<dis){
+				g = g + 1;
+			}
+		}
+		for(var i = 0;i < arx.length;i++){
+			if(Math.abs(y-ary[i]*bili-piy)<dis){
+				r = r + 1;
+			}
+		}
+		if(g==0&&r==0) return -1;
+		pyg = g/(g+r);
+		
+		var pg = pxg*pyg;
+		var pr = (1-pxg)*(1-pyg);
+		
+		if(pg>pr) return 1;
+		else return 0;
+	}
+	
+	function fillRect(){
+		for(var i = pix-200;i<pix+200;i=i+4){
+			for(var j = piy-200;j<piy+200;j=j+4){
+				var r = svg.append("rect").attr("x",i).attr("y",j).attr("width",4).attr("height",4).attr("fill","#CCCCCC");
+				var col = getCo(i,j);
+				if(col == -1)
+					r.transition().duration(10).attr("fill","#CCCCCC").delay((i-pix+200)*20);
+				if(col == 1)
+					r.transition().duration(10).attr("fill","#33CCFF").delay((i-pix+200)*20);
+				if(col == 0)
+					r.transition().duration(10).attr("fill","#FFCCCC").delay((i-pix+200)*20);
+			}
+		}
+	}
+</script>
+<div style="position:absolute;top:75px; left:10px;">
+	<button id='orig' onclick='orig()'  class="depth"> orig </button>
+	<button id='cir' onclick='cir()' class="depth" style="position:absolute;top:80px; left:0px;"> cir </button>
+	<button id='spi' onclick='spi()' class="depth" style="position:absolute;top:160px; left:0px;"> spi </button>
+</div>
+</body>  
+</html>

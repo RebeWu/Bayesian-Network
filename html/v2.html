@@ -1,0 +1,183 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>ABC</title>  
+</head>
+<style>
+.button{
+	border-radius:5px;
+	background:#87CEFA;
+}
+.rect{
+	border-radius:15px;
+}
+</style>
+<body> 
+<div style="position:absolute;top:200px"> 
+From &nbsp&nbsp&nbsp&nbsp<input type='text' id='afrom' style="width:50px;"/>&nbsp&nbsp&nbsp&nbsp To&nbsp&nbsp&nbsp&nbsp <input type='text' id='ato' style="width:50px;"/></br></br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+<button id='add' onclick='add()' class="button"> ADD </button> &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+<button id='del' onclick='del()' class="button"> DELETE </button> </button></br></br></br></br></br>
+
+SELECT<input type='text' id='sel'/> <button id='ok' onclick='sel()'> Ok </button></br></br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+<button id='push' onclick='push()'class="button" > BUILD </button></br>
+</div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+	var width = 500;
+	var height = 500;
+	//边界空白
+	var padding = {left: 400, right:50, top: 20, bottom: 20 };
+	var svg = d3.select("body")
+				.append("svg")
+				.attr("width", width + padding.left + padding.right)
+				.attr("height", height + padding.top + padding.bottom)
+				.append("g")
+				.attr("transform","translate("+ padding.left + "," + padding.top + ")");
+	var dot = new Array();
+	var dot2 = new Array();
+	var starts = new Array();
+	var ends = new Array();
+	var edges = 0;
+	var dotname = new Array("A","B","C","D","E","F","G","H");
+	var dotp1 = new Array("A1","B1","C1","D1","E1","F1","G1","H1");
+	var dotp2 = new Array("A2","B2","C2","D2","E2","F2","G2","H2");
+	var dotN = new Array(2,3,1,2);//点数
+	//画点
+	function drawDot(){
+		var p = 0;
+		for(var i = 0;i<4;i++){
+			dot[i] = new Array();
+			dot2[i] = new Array();
+			for(var j = 0;j<dotN[i];j++){
+				var dis = (3-dotN[i])*height/5;
+				dot[i][j] = svg.append("rect").attr("y",dis+height/5*2*j).attr("x",height/10*i+height/5*i).attr("fill","#87CEEB").attr("height",height/5).attr("width",height/10);
+				dot2[i][j] = svg.append("rect").attr("y",dis+height/5*2*j+height/10).attr("x",height/10*i+height/5*i).attr("fill","	#A9A9A9").attr("height",height/10).attr("width",height/10);
+				svg.append("text").attr("y",dis+height/5*2*j+height/5+15).attr("x",height/10*i+height/5*i+height/20-7).text(dotname[p]);
+				svg.append("text").attr("y",dis+height/5*2*j+height/10-25).attr("x",height/10*i+height/5*i+height/20-15).text(dotp1[p]);
+				svg.append("text").attr("y",dis+height/5*2*j+height/5-25).attr("x",height/10*i+height/5*i+height/20-15).text(dotp2[p]);
+				p = p+1;
+			}
+		}
+	}
+	function drawE(){
+		d3.select("body").selectAll("line").remove();
+		d3.select("body").selectAll("path").remove();
+		d3.select("body").selectAll("marker").remove();
+		var defs = svg.append("defs");
+		var arrowMarker = defs.append("marker")
+									.attr("id","arrow")
+									.attr("markerUnits","strokeWidth")
+									.attr("markerWidth","12")
+									.attr("markerHeight","12")
+									.attr("viewBox","0 0 12 12") 
+									.attr("refX","6")
+									.attr("refY","6")
+									.attr("orient","auto");
+		var arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
+		arrowMarker.append("path").attr("d",arrow_path).attr("fill","#000");
+		for(var i =0;i<edges;i++){
+			console.log(edges);
+			var q = 0,x1,x2,y1,y2;
+			for(var i1 = 0;i1<4;i1++){
+				for(var j = 0;j<dotN[i1];j++){
+					if(q==starts[i]){
+						x1 =(parseInt(dot[i1][j].attr("x"))+height/10);
+						y1 = parseInt(dot[i1][j].attr("y"))+height/10;
+					}
+					if(q==ends[i]){
+						x2 = dot[i1][j].attr("x");
+						y2 = parseInt(dot[i1][j].attr("y"))+height/10;
+					}
+					q++;
+				}
+			}
+			if(x1==x2&&y1==y2)
+				continue;
+			svg.append("line")
+						.attr("x1",x1)
+						.attr("y1",y1)
+						.attr("x2",x2)
+						.attr("y2",y2)
+						.attr("stroke","red")
+						.attr("stroke-width",2)
+						.attr("marker-end","url(#arrow)");
+		}
+	}
+	function add(){
+		var sp = document.getElementById('afrom').value;
+		var tp = document.getElementById('ato').value;
+		var f,t;
+		for(var i = 0;i<dotname.length;i++){
+			if(dotname[i]==sp)
+				f = i;
+			if(dotname[i]==tp)
+				t = i;
+		}
+		var exits = 0;
+		for(var i =0;i<edges;i++){
+			if(starts[i]==f&&ends[i]==t)
+				exits = 1;
+		}
+		if(exits == 0){
+			starts[edges] = f;
+			ends[edges] = t;
+			edges= edges+1;
+		}
+		drawE();
+	}
+	function del(){
+		var sp = document.getElementById('afrom').value;
+		var tp = document.getElementById('ato').value;
+		var f,t;
+		for(var i = 0;i<dotname.length;i++){
+			if(dotname[i]==sp)
+				f = i;
+			if(dotname[i]==tp)
+				t = i;
+		}
+		for(var i =0;i<edges;i++){
+			if(starts[i]==f&&ends[i]==t){
+				starts[i] = -1;
+				ends[i] = -1;
+			}
+		}
+		drawE();
+	}
+	function clear(){
+		d3.select("body").selectAll("circle").remove();
+		d3.select("body").selectAll("path").remove();
+	}
+	function sel(){
+		var sp = document.getElementById('sel').value;
+		var sps = sp.split(",");
+		console.log(sps);
+		var p = 0;
+		for(var i = 0;i<4;i++){
+			for(var j = 0;j<dotN[i];j++){
+				console.log(sps[p]);
+					if(sps[p]==dotp1[p]){					  
+						dot[i][j].attr("fill","#87CEEB").transition().duration(1000).attr("fill","red").delay(function(){
+							return 1000 * p});    
+						dot2[i][j].attr("fill","#A9A9A9"); 
+					}
+					if(sps[p]==dotp2[p]){
+						dot2[i][j].attr("fill","#A9A9A9").transition().duration(1000).attr("fill","red").delay(function(){return 1000 * p }); 
+					}	
+				p++;
+			}
+		}
+	}
+	function push(){
+		var ss = "",es ="";
+		for(var i = 0;i<edges;i++){
+			ss = ss+starts[i]+",";
+			es = es+ends[i]+",";
+		}
+		console.log(ss);
+		console.log(es);
+	}
+	drawDot();
+</script>
+</body>  
+</html>
